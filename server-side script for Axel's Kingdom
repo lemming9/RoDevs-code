@@ -1,0 +1,198 @@
+-- This script handles the admin panel's commands
+
+local Administrators = { -- Insert player's userId in this table for them to be able to use admin panel. Make sure to keep the 
+	                     -- organized, otherwise the script might fail.
+	2579464662, _, _, _, _, _, _,
+}
+
+local Verify_Player = function(player:Player)
+	local player_Id = player.UserId
+	for _, id in ipairs(Administrators) do 
+		if id == player_Id then
+			return true
+		end
+	end
+	return false
+end
+
+local Players = game:GetService("Players")
+local Replicated_Storage = game:GetService("ReplicatedStorage")
+
+Players.PlayerAdded:Connect(function(Player)
+	if Verify_Player(Player) then
+		local Admin_Panel = Replicated_Storage.AdminPanel:Clone()
+		Admin_Panel.Parent = Player.PlayerGui
+		Admin_Panel.LocalScripts.AdminPanelHandler.Enabled = true
+		warn("🪟💻 " .. Player.Name .. " is a certified ADMINISTRATOR. He has received access to the Admin Panel. 💻🪟")
+	end
+end)
+
+local Command_Inserted = Replicated_Storage.RemoteEvents.CommandInserted
+local FreezeParts = workspace["Player's Freeze parts"]
+
+local Global_function_error_message = [[⚠️⚠️☢️ "Player" Instance was not found! ☢️⚠️⚠️ ]]
+
+local Available_Commands = {
+	"kill",
+	"kick",
+	"damage",
+	"freeze",
+	"unfreeze",
+	"ban",
+	"teleport"
+}
+
+local Command_Functions = {
+	
+	-- //Kill function//
+	kill = function(Player_Name:string, _ , Player_Who_Triggered_The_Function:Player)
+		local Player = Players:FindFirstChild(Player_Name) or error(Global_function_error_message)
+		
+		local Character = Player.Character
+		local Humanoid = Character:FindFirstChild("Humanoid")
+		
+		local s, r = pcall(function()
+		  Humanoid.Health = 0
+		end)
+		if s then
+			warn("🔪 " .. Player.Name .. " has been KILLED by " .. Player_Who_Triggered_The_Function.Name .. "! " .. "🗡️")
+		end
+	end,
+	
+	-- //Kick function//
+	kick = function(Player_Name:string, Kick_Message:string, Player_Who_Triggered_The_Function:Player)
+		local Player = Players:FindFirstChild(Player_Name) or error(Global_function_error_message)
+		local Kick_Message = Kick_Message
+		
+		local s, r = pcall(function()
+		   Player:Kick(Kick_Message)
+		end)
+		if s then
+			warn("💥 " .. Player.Name .. " has been KICKED by " .. Player_Who_Triggered_The_Function.Name .. " from this experience!" .. " 💥")
+		end
+		
+	end,
+	
+	-- //Freeze function//
+	freeze = function(Player_Name:string, _ ,  Player_Who_Triggered_The_Function:Player)
+		local Player = Players:FindFirstChild(Player_Name) or error(Global_function_error_message)
+		
+		local Character = Player.Character
+		local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+		
+		if HumanoidRootPart.Anchored == true then return end
+
+		local Ice = Instance.new("Part")
+		Ice.Color = Color3.fromRGB(14, 191, 255)
+		Ice.Anchored = true
+		Ice.CanCollide = false
+		Ice.CFrame = HumanoidRootPart.CFrame
+		Ice.Size = Vector3.new(6, 9, 4)
+		Ice.Transparency = 0.5
+		Ice.Name = Player.Name .. "'s Ice"
+		Ice.Parent = workspace["Player's Freeze parts"]
+		
+		local s, r = pcall(function()
+			
+		    HumanoidRootPart.Anchored = true
+		end)
+		if s then
+			warn("🧊🥶 " .. Player.Name .. " has been FREEZED by " .. Player_Who_Triggered_The_Function.Name .. "!" .. " 🥶🧊")
+		end
+	end,
+	
+	--//Unfreeze function//
+	unfreeze = function(Player_Name:string, _, Player_Who_Triggered_The_Function:Player)
+		local Player = Players:FindFirstChild(Player_Name) or error(Global_function_error_message)
+		
+		local Character = Player.Character
+		local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+		
+		if not HumanoidRootPart.Anchored then return end
+		
+		local s, r = pcall(function()
+			local Ice = FreezeParts[Player.Name .. "'s Ice"]
+			if Ice then
+				Ice:Destroy()
+				HumanoidRootPart.Anchored = false
+			end
+		end)
+		if s then
+			warn("🧊🥶 " .. Player.Name .. " has been UNFREEZED by " .. Player_Who_Triggered_The_Function.Name .. "!" .. " 🥶🧊")
+		end
+	end,
+	
+	--// Teleport function//
+	teleport = function(Player1_Name:string, Player2_Name:string, Player_Who_Triggered_The_Function:Player)
+		local Player1 = Players:FindFirstChild(Player1_Name) or error(Global_function_error_message)
+		local Player2 = Players:FindFirstChild(Player2_Name) or error(Global_function_error_message)
+		
+		local Character_One = Player1.Character
+		local Character_Two = Player2.Character
+		
+		local HumanoidRootPart_One = Character_One:FindFirstChild("HumanoidRootPart")
+		local HumanoidRootPart_Two = Character_Two:FindFirstChild("HumanoidRootPart")
+		
+		local s, r = pcall(function()
+			local Ice = FreezeParts:FindFirstChild(Player1.Name .. "'s Ice")
+
+		   if Ice ~= nil then
+		      HumanoidRootPart_One.CFrame = HumanoidRootPart_Two.CFrame * CFrame.new(0, 5, 0)
+		      Ice.CFrame = HumanoidRootPart_One.CFrame
+		   end
+		end)
+		if s then 
+			warn("🔭 "..Player1.Name .. "has been teleported to " ..  Player2.Name .. "'s position by " .. Player_Who_Triggered_The_Function.Name .. "! 👨")
+		end
+	end,
+	
+	--// Damage function//
+	damage = function(Player_Name:string, Amount: string, Player_Who_Triggered_The_Function:Player)
+		local Player = Players:FindFirstChild(Player_Name) or error(Global_function_error_message)
+		local Damage = tonumber(Amount) or math.random(0, 100)
+		print(Damage, typeof(Damage))
+		
+		local Character = Player.Character
+		local Humanoid:Humanoid = Character:FindFirstChild("Humanoid")
+		
+		local s, r = pcall(function()
+		   Humanoid:TakeDamage(Damage)
+		end)
+		if s then
+			warn("⚔️🩸 " .. Player.Name.. " has received " .. Amount .. " points of damage by " .. Player_Who_Triggered_The_Function.Name .. ". He now has " .. Humanoid.Health .." points of health. 🛡️❤️")
+		end
+	end,
+	
+	--// Ban function//
+	ban = function(Player_Name:string, Ban_Message, Player_Who_Triggered_The_Function:Player)
+		local Player:Player = Players:FindFirstChild(Player_Name) or error(Global_function_error_message)
+		local Players_To_Ban = {
+			Player.UserId
+		}
+		
+		local banConfig = {
+			UserIds = Players_To_Ban,             
+			Duration = -1,                   
+			DisplayReason = Ban_Message,   
+			PrivateReason = "",
+			ApplyToUniverse = true,            
+			ExcludeAltAccounts = false         
+		}
+		local s, r = pcall(function()
+		   Players:BanAsync(banConfig)
+		end)  
+		if s then
+			warn("⚠️⚠️☢️" .. Player.Name.. " has been BANNED by " .. Player_Who_Triggered_The_Function.Name .. " from this experience! (lil bro got clapped fr fr😭✌️🥀)") -- If you want, you can change that. It is corny asf
+		end
+	end,
+}
+
+Command_Inserted.OnServerEvent:Connect(function(player, Target1, Target2, Command_Retrieved)
+	if Verify_Player(player) then 
+	   for _, Command in Available_Commands do 
+			if Command == Command_Retrieved then
+				Command_Functions[Command_Retrieved](Target1, Target2, player)
+			end
+	   end
+	end
+end)
