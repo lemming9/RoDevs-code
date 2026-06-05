@@ -1,0 +1,60 @@
+local IsModTabOpen = false
+local IsIntTabOpen = false
+
+local Players = game:GetService("Players")
+local Replicated_Storage = game:GetService("ReplicatedStorage")
+local Collection_Service = game:GetService("CollectionService")
+
+local Command_Inserted = Replicated_Storage:WaitForChild("RemoteEvents"):WaitForChild("CommandInserted")
+local Player = Players.LocalPlayer
+local Player_Gui = Player:WaitForChild("PlayerGui")
+local Admin_Panel = Player_Gui:WaitForChild("AdminPanel")
+
+local Open_Admin_Panel = Admin_Panel:WaitForChild("OpenAdminPanel")
+
+local Main_Frame = Admin_Panel:WaitForChild("MainFrame")
+
+local Moderation_Tab = Main_Frame:WaitForChild("ModerationCommandsTab")
+local Interaction_Tab = Main_Frame:WaitForChild("InteractionCommandsTab")
+
+local Target1_Input = Main_Frame:WaitForChild("Target1InputBox")
+local Target2_Input = Main_Frame:WaitForChild("Target2InputBox")
+
+local Open_Moderation_Tab = Main_Frame:WaitForChild("OpenModerationTab")
+local Open_Interaction_Tab = Main_Frame:WaitForChild("OpenInteractionTab")
+
+local Command_Buttons = Collection_Service:GetTagged("CommandButton")
+
+local Open_Close_Moderation_Tab = function()
+	if IsIntTabOpen then return end
+	Moderation_Tab.Visible = not Moderation_Tab.Visible
+	IsModTabOpen = not IsModTabOpen
+end
+
+local Open_Close_Interaction_Tab = function()
+	if IsModTabOpen then return end
+	Interaction_Tab.Visible = not Interaction_Tab.Visible
+	IsIntTabOpen = not IsIntTabOpen
+end
+
+Open_Moderation_Tab.Activated:Connect(Open_Close_Moderation_Tab)
+
+Open_Interaction_Tab.Activated:Connect(Open_Close_Interaction_Tab)
+
+Open_Admin_Panel.Activated:Connect(function()
+	Main_Frame.Visible = not Main_Frame.Visible
+end)
+
+for _, Button in Command_Buttons do 
+    local Debounce = false
+	Button.Activated:Connect(function()
+	    if Debounce then return end
+	    Debounce = true
+		local Button_Name = string.lower(Button.Text)
+		local Target1 = Target1_Input.Text
+		local Target2 = Target2_Input.Text
+		Command_Inserted:FireServer(Target1, Target2, Button_Name)
+		task.wait(2)
+		Debounce = false
+	end)
+end
